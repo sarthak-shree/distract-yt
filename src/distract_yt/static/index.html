@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>distract-yt — your distraction-free YouTube</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- top bar -->
+    <header class="topbar">
+      <button id="menu-toggle" class="icon-btn" title="Toggle menu">☰</button>
+      <div class="brand">
+        <span class="logo">▶</span>
+        <span class="brand-name">distract-yt</span>
+      </div>
+      <div class="top-spacer"></div>
+      <span id="conn-badge" class="badge">connecting…</span>
+      <button id="btn-add" class="btn primary">+ Add</button>
+    </header>
+
+    <div class="layout" id="layout">
+      <!-- sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <button class="side-item active" data-tab="home">
+          <span class="si-ico">🏠</span><span class="si-label">Home</span>
+        </button>
+        <button class="side-item" data-tab="videos">
+          <span class="si-ico">▶</span><span class="si-label">Videos</span>
+        </button>
+        <button class="side-item" data-tab="channels">
+          <span class="si-ico">📺</span><span class="si-label">Channels</span>
+        </button>
+        <button class="side-item" data-tab="playlists">
+          <span class="si-ico">📋</span><span class="si-label">Collections</span>
+        </button>
+        <div class="side-foot">
+          <button id="btn-clear-all" class="btn small danger">Clear all videos</button>
+        </div>
+      </nav>
+
+      <!-- content -->
+      <main id="app" class="content">
+        <p class="placeholder">Loading your library…</p>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add-content modal -->
+  <div id="modal" class="overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Add content to your library</h2>
+        <button id="modal-close" class="x" title="Close">&times;</button>
+      </div>
+      <p class="hint">
+        Search is only for <em>adding</em> good content. Nothing will ever show
+        recommendations.
+      </p>
+
+      <div class="add-tabs">
+        <button class="add-tab active" data-type="video">Video</button>
+        <button class="add-tab" data-type="channel">Channel</button>
+        <button class="add-tab" data-type="playlist">Playlist</button>
+        <button class="add-tab" data-type="url">Paste URL</button>
+      </div>
+
+      <div class="fields">
+        <input
+          id="add-input"
+          type="text"
+          placeholder="Search YouTube for a video, channel or playlist…"
+          autocomplete="off"
+        />
+        <button id="add-search" class="btn">Search</button>
+      </div>
+
+      <div id="search-results" class="results"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

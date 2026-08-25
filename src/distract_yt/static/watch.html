@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch — distract-yt</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="logo">▶</span>
+      <span class="brand-name">distract-yt</span>
+    </a>
+    <div class="top-spacer"></div>
+    <a class="btn small" href="/">← Back to library</a>
+  </header>
+
+  <main class="content">
+    <div class="watch-layout">
+      <div class="player-col">
+        <div class="player-shell" id="shell">
+          <div id="player"></div>
+
+          <!-- end screen (no autoplay — replay or pick from queue) -->
+          <div class="cp-ended" id="cp-ended">
+            <p style="margin:0;color:#fff">Video ended — no autoplay, no suggestions.</p>
+            <button class="btn primary" id="cp-replay">↻ Replay</button>
+          </div>
+
+          <!-- custom controls -->
+          <div class="cp-controls" id="cp-controls">
+            <div class="cp-main">
+              <button id="cp-play" class="cp-btn" title="Play / Pause">▶</button>
+              <span class="cp-time" id="cp-cur">0:00</span>
+              <input id="cp-seek" class="cp-seek" type="range" min="0" max="1000" value="0" step="1" />
+              <span class="cp-time" id="cp-dur">0:00</span>
+              <button id="cp-mute" class="cp-btn" title="Mute">🔊</button>
+              <input id="cp-vol" class="cp-vol" type="range" min="0" max="100" value="100" />
+              <select id="cp-rate" class="cp-rate" title="Speed">
+                <option value="0.5">0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+              <button id="cp-fs" class="cp-btn" title="Fullscreen">⛶</button>
+            </div>
+            <div class="cp-hint" id="cp-hint"></div>
+          </div>
+        </div>
+
+        <div class="video-meta">
+          <h1 id="video-title">…</h1>
+          <a class="ch" id="video-channel" href="#">channel</a>
+          <p class="noise-note">Custom player · only your library · no recommendations · no autoplay</p>
+        </div>
+      </div>
+
+      <aside class="queue-col">
+        <h3 id="queue-title">More from this channel</h3>
+        <div id="queue"><p class="queue-empty">Loading…</p></div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="/static/player.js"></script>
+</body>
+</html>
