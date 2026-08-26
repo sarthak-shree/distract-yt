@@ -1,0 +1,12 @@
+# Note: this file mirrors the runtime dependencies declared in pyproject.toml.
+# It exists so Render/pip can install the app without the uv build backend.
+# Versions are the current resolved set; loosen them (>=) if you prefer the
+# latest compatible releases. Regenerate with:
+#   uv lock  &&  uv export --no-dev --format requirements-txt  (best kept in sync)
+
+flask>=3.1.3
+gunicorn>=23.0.0
+psycopg[binary]>=3.3.4
+python-dotenv>=1.2.3
+requests>=2.34.2
+sqlalchemy>=2.0.52
