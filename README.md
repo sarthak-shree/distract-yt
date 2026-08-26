@@ -159,3 +159,46 @@ autoplay and no suggestions** — just a Replay button. The right-hand panel sho
 uv run python -c "from distract_yt import create_app; print(create_app())"
 uv run pytest
 ```
+
+## Deploying to Render & keeping it always-on
+
+Render's **free tier** puts a web service to sleep after ~15 minutes without
+traffic and re-wakes it lazily on the next request — which means after a long idle
+period the first visitor still hits a cold start, and some users report it acting
+"inactive". This repo ships a keep-alive so a free service **stays awake**.
+
+### How the keep-alive works
+
+- A background thread (`src/distract_yt/keep_alive.py`) pings the app's own
+  public `/health` endpoint on a loop, keeping the instance continuously "busy"
+  so Render never considers it idle.
+- It is enabled with `KEEP_ALIVE=1` (interval in seconds via
+  `KEEP_ALIVE_INTERVAL`, default 30).
+- A second, optional standalone pinger (`scripts/keep_alive_pinger.py`) can run
+  from outside Render as belt-and-suspenders:
+
+  ```bash
+  uv run python scripts/keep_alive_pinger.py --url https://your-app.onrender.com --interval 30
+  ```
+
+### One-click deploy (Renderer Blueprint)
+
+A `render.yaml` is included. In the Render dashboard:
+
+1. **New + → Blueprint** and select this repo (Render reads `render.yaml`).
+2. In **Environment**, fill the secrets Render can't auto-infer:
+   - `DATABASE_URL` — provision a Render Postgres (free tier) and use its
+     connection string (dialect `postgresql+psycopg://…`).
+   - `YOUTUBE_API_KEY` — your Google Data API v3 key.
+   - `SECRET_KEY` — a long random value
+     (`python -c "import secrets;print(secrets.token_hex(32))"`).
+3. Deploy. The service binds `0.0.0.0:$PORT` via gunicorn, has `/health` as its
+   health-check path, and `KEEP_ALIVE=1` keeps it warm.
+
+> The app also works on Render with SQLite if you skip Postgres:
+> set `DATABASE_URL=sqlite:////var/data/distract_yt.db` (and attach a disk) —
+> but PostgreSQL is recommended.
+
+To verify it is staying awake on Render, open
+`https://your-app.onrender.com/health` a few minutes after your last visit —
+it should still respond instantly instead of taking a long cold-start spin up.

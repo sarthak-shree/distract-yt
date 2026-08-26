@@ -45,6 +45,13 @@ def create_app() -> Flask:
     def service_worker():
         return send_from_directory(STATIC_DIR, "service-worker.js")
 
+    @app.get("/health")
+    def health():
+        # Lightweight public liveness probe used by Render's health check and by
+        # the built-in keep-alive (see keep_alive.py). It avoids the DB so the
+        # probe stays cheap and reliable.
+        return {"ok": True}, 200
+
     return app
 
 
@@ -63,5 +70,16 @@ def main() -> None:
         sys.exit(1)
 
     app = create_app()
+
+    if config.KEEP_ALIVE_ENABLED:
+        from .keep_alive import start_keep_alive
+
+        # Self-ping the app's own health endpoint so Render's free tier never
+        # considers the instance idle and spins it down.
+        start_keep_alive(
+            interval_seconds=config.KEEP_ALIVE_INTERVAL,
+            base_url=f"http://127.0.0.1:{config.PORT}",
+        )
+
     print(f"\n[distract-yt] Your distraction-free library: http://{config.HOST}:{config.PORT}\n")
     app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)

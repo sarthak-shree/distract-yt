@@ -964,3 +964,57 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 127.0.0.1 - - [26/Aug/2026 12:50:55] "GET /service-worker.js HTTP/1.1" 304 -
 127.0.0.1 - - [26/Aug/2026 12:54:10] "GET /static/style.css HTTP/1.1" 200 -
 127.0.0.1 - - [26/Aug/2026 12:54:10] "GET /api/status HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /static/particles.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /static/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /api/auth/me HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /api/videos HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /api/channels HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:46] "GET /api/playlists HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:47] "GET /static/favicon.svg HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:53] "GET /watch/jk_A6Aue98I HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:53] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 12:54:53] "GET /static/player.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 12:54:54] "GET /api/auth/me HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:55] "GET /api/videos/jk_A6Aue98I HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:55] "GET /api/videos?channel_id=UCsY3M9SiyS9MfFq68e9S0Rw HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 12:54:55] "GET /service-worker.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:20] "GET /watch/HA-VXeBwmgs HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:20] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:20] "GET /static/player.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:20] "GET /api/auth/me HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:21] "GET /api/videos/HA-VXeBwmgs HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:21] "GET /api/videos?channel_id=UCsY3M9SiyS9MfFq68e9S0Rw HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:22] "GET /service-worker.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:22] "GET /static/favicon.svg HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET / HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /static/particles.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /static/app.js HTTP/1.1" 304 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /api/auth/me HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /api/videos HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /api/channels HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:24] "GET /api/playlists HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:26] "GET /api/channels/UCsY3M9SiyS9MfFq68e9S0Rw/playlists HTTP/1.1" 200 -
+127.0.0.1 - - [26/Aug/2026 13:04:26] "GET /service-worker.js HTTP/1.1" 304 -
+ * Detected change in 'C:\\Users\\dhiraj kumar\\distract-yt\\src\\distract_yt\\keep_alive.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-007-749
+ * Detected change in 'C:\\Users\\dhiraj kumar\\distract-yt\\src\\distract_yt\\__init__.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-007-749
+ * Detected change in 'C:\\Users\\dhiraj kumar\\distract-yt\\src\\distract_yt\\__init__.py', reloading
+ * Restarting with stat
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "c:\Users\dhiraj kumar\distract-yt\.venv\Scripts\distract-yt.exe\__main__.py", line 10, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\dhiraj kumar\distract-yt\src\distract_yt\__init__.py", line 74, in main
+    if config.KEEP_ALIVE_ENABLED:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'distract_yt.config' has no attribute 'KEEP_ALIVE_ENABLED'

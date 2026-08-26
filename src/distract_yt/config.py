@@ -46,3 +46,11 @@ SECRET_KEY: str = get_env("SECRET_KEY", "distract-yt-dev-secret-change-me") or "
 
 # How many videos to pull when importing a channel (keeps quotas low).
 CHANNEL_IMPORT_LIMIT: int = int(get_env("CHANNEL_IMPORT_LIMIT", "15") or "15")
+
+# Render keep-alive: when true, the app self-pings its own /health endpoint so a
+# free-tier Render web service is never considered idle and spun down.
+KEEP_ALIVE_ENABLED: bool = (get_env("KEEP_ALIVE", "0") or "0") == "1"
+
+# Seconds between keep-alive pings. Keep it well under Render's ~15 min idle
+# threshold (30s is safe and cheap).
+KEEP_ALIVE_INTERVAL: int = int(get_env("KEEP_ALIVE_INTERVAL", "30") or "30")
