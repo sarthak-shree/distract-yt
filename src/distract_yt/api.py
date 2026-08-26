@@ -6,13 +6,85 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import new_session, init_db
-from .models import Channel, Playlist, Video
+from .models import Channel, Playlist, User, Video
 from .youtube import YouTubeClient, YouTubeError, extract_ids
 
 bp = Blueprint("api", __name__, url_prefix="/api")
+
+# Routes that do not require authentication: the auth endpoints themselves
+# and the health-check. Everything else in the library requires a login.
+_PUBLIC_PATHS = ("/api/auth/", "/api/status")
+
+
+@bp.before_request
+def _require_login():
+    if request.path == "/api/status" or request.path.startswith("/api/auth/"):
+        return None
+    if session.get("user_id"):
+        return None
+    return jsonify({"error": "Authentication required"}), 401
+
+
+# --------------------------------------------------------------------- auth
+@bp.post("/auth/register")
+def register():
+    body = request.get_json(silent=True) or {}
+    username = (body.get("username") or "").strip()
+    password = body.get("password") or ""
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+    if len(username) < 3:
+        return jsonify({"error": "Username must be at least 3 characters."}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
+    with new_session() as sess:
+        if sess.query(User).filter(User.username == username).first():
+            return jsonify({"error": "That username is already taken."}), 409
+        user = User(username=username, password_hash=generate_password_hash(password))
+        sess.add(user)
+        sess.commit()
+        session["user_id"] = user.id
+        return jsonify(user.to_dict()), 201
+
+
+@bp.post("/auth/login")
+def login():
+    body = request.get_json(silent=True) or {}
+    username = (body.get("username") or "").strip()
+    password = body.get("password") or ""
+    with new_session() as sess:
+        user = sess.query(User).filter(User.username == username).first()
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid username or password."}), 401
+        session["user_id"] = user.id
+        return jsonify(user.to_dict())
+
+
+@bp.post("/auth/logout")
+def logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+@bp.get("/auth/me")
+def me():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Authentication required"}), 401
+    with new_session() as sess:
+        user = sess.get(User, user_id)
+        if not user:
+            session.clear()
+            return jsonify({"error": "Authentication required"}), 401
+        return jsonify(user.to_dict())
+
+
+# --------------------------------------------------------------------- errors
+@bp.errorhandler(YouTubeError)
 
 
 def _client() -> YouTubeClient:
@@ -113,6 +185,23 @@ def list_playlists():
         return jsonify([r.to_dict() for r in rows])
 
 
+@bp.get("/channels/<channel_id>/playlists")
+def list_channel_playlists(channel_id: str):
+    """Live discovery of all playlists owned by an allowed channel.
+
+    Only used inside the channel menu — playlists are *shown* so the user can
+    explicitly add the ones they want; nothing is auto-added.
+    """
+    with new_session() as sess:
+        if not sess.get(Channel, channel_id):
+            return jsonify({"error": "Add the channel to your library first."}), 404
+        in_library = {p.id for p in sess.query(Playlist).all()}
+    rows = _client().channel_playlists(channel_id)
+    for r in rows:
+        r["in_library"] = r["id"] in in_library
+    return jsonify(rows)
+
+
 @bp.post("/playlists")
 def add_playlist():
     body = request.get_json(silent=True) or {}
@@ -130,6 +219,8 @@ def add_playlist():
             return jsonify(existing.to_dict()), 200
         row = Playlist(
             id=pid,
+            channel_id=info.get("channel_id"),
+            channel_title=info.get("channel_title"),
             title=info.get("title"),
             description=info.get("description") or "",
             thumbnail_url=info.get("thumbnail_url"),

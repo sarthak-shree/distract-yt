@@ -28,7 +28,13 @@ def app():
 
 @pytest.fixture()
 def client(app):
-    return app.test_client()
+    client = app.test_client()
+    # The library routes now require login. Register a user, logging in if the
+    # account already exists from a previous run against the shared DB.
+    r = client.post("/api/auth/register", json={"username": "tester", "password": "secret123"})
+    if r.status_code not in (200, 201):
+        client.post("/api/auth/login", json={"username": "tester", "password": "secret123"})
+    return client
 
 
 def test_index_serves(app):
@@ -50,10 +56,22 @@ def test_status_endpoint(client):
     assert resp.get_json()["ok"] is True
 
 
-def test_empty_library(client):
-    assert client.get("/api/videos").get_json() == []
+def test_list_endpoints_authenticated(client):
+    # Authenticated client: library endpoints return JSON lists (the shared DB
+    # may hold real data from previous runs, so we only assert shape, not size).
+    assert isinstance(client.get("/api/videos").get_json(), list)
     assert isinstance(client.get("/api/channels").get_json(), list)
     assert isinstance(client.get("/api/playlists").get_json(), list)
+
+
+def test_library_requires_login(app):
+    # Unauthenticated requests to the library API are rejected with 401.
+    anon = app.test_client()
+    assert anon.get("/api/videos").status_code == 401
+    assert anon.get("/api/channels").status_code == 401
+    assert anon.get("/api/playlists").status_code == 401
+    # ...but the health check stays public.
+    assert anon.get("/api/status").status_code == 200
 
 
 def test_add_requires_url(client):

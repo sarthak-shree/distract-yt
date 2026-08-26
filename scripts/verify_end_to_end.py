@@ -42,8 +42,17 @@ class FakeYT(youtube.YouTubeClient):
                 "published_at": "2024-01-01T00:00:00Z"}
 
     def playlist_by_id(self, pid):
-        return {"id": pid, "title": "Playlist A", "description": "p",
+        return {"id": pid, "channel_id": "UCabc1234567890123456789", "channel_title": "Channel One",
+                "title": "Playlist A", "description": "p",
                 "thumbnail_url": None, "item_count": 2}
+
+    def channel_playlists(self, cid, limit=50):
+        return [
+            {"id": "PLabc123456", "channel_id": cid, "channel_title": "Channel One",
+             "title": "Playlist A", "description": "p", "thumbnail_url": None, "item_count": 2},
+            {"id": "PLother99999", "channel_id": cid, "channel_title": "Channel One",
+             "title": "Playlist B", "description": "q", "thumbnail_url": "http://x/pl.png", "item_count": 1},
+        ]
 
     def channel_videos(self, cid):
         return [{"id": f"v{i}", "title": f"C video {i}", "description": "",
@@ -81,6 +90,25 @@ def main():
     def ok(cond, label):
         checks.append((bool(cond), label))
 
+    # --- auth: register a user then verify guarded routes (shared client session) ---
+    import time as _time
+    uname = "alice" + str(int(_time.time()))  # unique per run to guarantee a fresh account
+    reg = c.post("/api/auth/register", json={"username": uname, "password": "secret123"})
+    ok(reg.status_code == 201, "register returns 201")
+    ok(reg.get_json().get("username") == uname, "register persists username")
+
+    # library routes are guarded until logged in
+    fresh = app.test_client()
+    ok(fresh.get("/api/videos").status_code == 401, "unauthenticated /api/videos -> 401")
+    ok(fresh.post("/api/auth/login", json={"username": uname, "password": "secret123"}).status_code == 200, "login ok")
+    ok(fresh.get("/api/videos").status_code == 200, "authenticated /api/videos -> 200")
+    ok(fresh.post("/api/auth/login", json={"username": uname, "password": "wrong"}).status_code == 401, "bad password -> 401")
+    ok(fresh.get("/api/auth/me").get_json()["username"] == uname, "/api/auth/me returns user")
+    ok(fresh.post("/api/auth/logout").status_code == 200, "logout ok")
+    ok(fresh.get("/api/videos").status_code == 401, "logged out -> 401 again")
+    # log back in for the rest of the checks
+    ok(c.post("/api/auth/login", json={"username": uname, "password": "secret123"}).status_code == 200, "login for run")
+
     ok(c.get("/").status_code == 200, "GET / serves index")
     ok(b"distract-yt" in c.get("/").data, "index references brand")
     ok(c.get("/watch/abc123def45").status_code == 200, "GET /watch/<id> serves")
@@ -109,9 +137,24 @@ def main():
     # add a second channel so playlist-imported videos can attach to it
     c.post("/api/channels", json={"url": "https://youtube.com/channel/UCc"})
 
+    # NEW: channel menu playlists (live discovery + in_library flag)
+    cpls = c.get("/api/channels/UCabc1234567890123456789/playlists")
+    ok(cpls.status_code == 200, "GET channel playlists 200")
+    pls = cpls.get_json()
+    ok(isinstance(pls, list) and len(pls) == 2, "channel playlists listed")
+    ok(all("in_library" in p for p in pls), "channel playlists carry in_library flag")
+    ok(all(not p["in_library"] for p in pls), "playlists not yet in library")
+    ok(c.get("/api/channels/UCnope/playlists").status_code == 404, "unknown channel playlists -> 404")
+
     # playlist
     r = c.post("/api/playlists", json={"id": "PLabc123456"})
     ok(r.status_code == 201, "POST playlist 201")
+    ok(r.get_json()["channel_id"] == "UCabc1234567890123456789", "playlist stores channel_id")
+    ok(r.get_json()["channel_title"] == "Channel One", "playlist stores channel_title")
+    # after adding, the matching playlist is flagged in_library on the next fetch
+    pls2 = c.get("/api/channels/UCabc1234567890123456789/playlists").get_json()
+    added = [p for p in pls2 if p["id"] == "PLabc123456"]
+    ok(added and added[0]["in_library"], "added playlist flagged in_library")
     r = c.post("/api/import/playlist/PLabc123456")
     ok(r.status_code == 200 and r.get_json()["added"] == 2, "import playlist adds 2")
 

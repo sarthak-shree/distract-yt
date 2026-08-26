@@ -8,17 +8,28 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
   <div class="app">
     <!-- top bar -->
     <header class="topbar">
-      <button id="menu-toggle" class="icon-btn" title="Toggle menu">☰</button>
+      <button id="menu-toggle" class="nav-toggle" title="Toggle menu"><span></span></button>
       <div class="brand">
         <span class="logo">▶</span>
         <span class="brand-name">distract-yt</span>
       </div>
       <div class="top-spacer"></div>
       <span id="conn-badge" class="badge">connecting…</span>
-      <button id="btn-add" class="btn primary">+ Add</button>
+      <button id="btn-add" class="blob-btn compact">
+        + Add
+        <span class="blob-btn__inner">
+          <span class="blob-btn__blobs">
+            <span class="blob-btn__blob"></span>
+            <span class="blob-btn__blob"></span>
+            <span class="blob-btn__blob"></span>
+            <span class="blob-btn__blob"></span>
+          </span>
+        </span>
+      </button>
     </header>
 
     <div class="layout" id="layout">
@@ -38,6 +49,7 @@
         </button>
         <div class="side-foot">
           <button id="btn-clear-all" class="btn small danger">Clear all videos</button>
+          <button id="btn-logout" class="btn small logout-btn">Sign out</button>
         </div>
       </nav>
 
@@ -81,6 +93,18 @@
     </div>
   </div>
 
+  <!-- SVG gooey filter used by the blob buttons -->
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="position:absolute;height:0;width:0" aria-hidden="true">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+        <feBlend in="SourceGraphic" in2="goo" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="/static/particles.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

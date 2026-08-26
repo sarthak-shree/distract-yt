@@ -35,6 +35,8 @@ const state = {
   playlists: [],
   modalType: "video",
   activeChannel: null,
+  activePlaylist: null,
+  homeQuery: "",
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -88,7 +90,7 @@ function channelCard(c) {
 }
 
 function playlistCard(p) {
-  return `<div class="card">
+  return `<div class="card playlist-card" data-open-playlist="${esc(p.id)}" role="link" tabindex="0">
     <div class="thumb"><img src="${esc(p.thumbnail_url || "")}" alt="" loading="lazy" /></div>
     <div class="meta">
       <h3>${esc(p.title)}</h3>
@@ -116,7 +118,13 @@ function renderHome() {
     return;
   }
 
-  let html = "";
+  const q = (state.homeQuery || "").toString().trim().toLowerCase();
+  let html = `
+    <div class="home-search">
+      <span class="hs-ico">🔍</span>
+      <input id="home-search" type="search" placeholder="Search playlists in your library…" autocomplete="off" value="${esc(state.homeQuery || "")}" />
+    </div>
+    <div id="home-search-results" class="search-results" ${q ? "" : "hidden"}></div>`;
 
   // channels strip — click a chip to enter that channel
   if (state.channels.length) {
@@ -138,7 +146,13 @@ function renderHome() {
       .filter(Boolean);
     if (!vids.length) return;
     const cards = vids.slice(0, 12).map((v) => videoCard(v, { hideChannel: true })).join("");
-    html += sectionBlock(`📋 ${p.title}`, vids.length + " videos", cards);
+    html += `<div class="section">
+      <div class="section-head">
+        <button class="section-title" data-open-playlist="${esc(p.id)}">📋 ${esc(p.title)}</button>
+        <span class="count">${vids.length} videos</span>
+      </div>
+      <div class="hrow">${cards}</div>
+    </div>`;
   });
 
   // one section per channel (auto-created when a channel is added)
@@ -160,6 +174,28 @@ function renderHome() {
   }
 
   main.innerHTML = html;
+  if (q) filterLibraryPlaylists();
+}
+
+function filterLibraryPlaylists() {
+  const input = document.querySelector("#home-search");
+  const box = document.querySelector("#home-search-results");
+  if (!input || !box) return;
+  const q = input.value.trim().toLowerCase();
+  state.homeQuery = input.value;
+  if (!q) {
+    box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+  const matches = state.playlists.filter((p) => (p.title || "").toLowerCase().includes(q));
+  box.hidden = false;
+  const heading = `<div class="page-title">Playlist search <span class="count">${matches.length}</span></div>`;
+  if (!matches.length) {
+    box.innerHTML = heading + `<p class="placeholder">No playlists in your library match “${esc(q)}”.</p>`;
+    return;
+  }
+  box.innerHTML = heading + `<div class="grid">${matches.map(playlistCard).join("")}</div>`;
 }
 
 function renderVideos() {
@@ -198,11 +234,48 @@ function renderPlaylists() {
     <div class="grid">${state.playlists.map(playlistCard).join("")}</div>`;
 }
 
+function renderPlaylistDetail() {
+  const main = $("#app");
+  const pl = state.activePlaylist;
+  if (!pl) { state.tab = "home"; return render(); }
+  const vids = (pl.video_ids || [])
+    .map((vid) => state.videos.find((v) => v.id === vid))
+    .filter(Boolean);
+  const meta = `${vids.length} videos in library${pl.channel_title ? " · " + esc(pl.channel_title) : ""}`;
+  main.innerHTML = `
+    <a class="back-link" data-tab-nav="playlists">← Back to collections</a>
+    <div class="chan-header">
+      <img src="${esc(pl.thumbnail_url || "")}" alt="" />
+      <div>
+        <h1>${esc(pl.title)}</h1>
+        <div class="sub">${meta}</div>
+        <div class="actions">
+          <button class="btn small" data-act="import-playlist" data-id="${esc(pl.id)}">Import videos</button>
+          <button class="btn small danger" data-del="playlists" data-id="${esc(pl.id)}">Remove</button>
+        </div>
+      </div>
+    </div>
+    ${vids.length
+      ? `<div class="page-title">Videos in this playlist <span class="count">${vids.length}</span></div>
+         <div class="grid">${vids.map((v) => videoCard(v, { actions: true })).join("")}</div>`
+      : `<p class="placeholder">No videos in this playlist yet. Click <b>Import videos</b> to pull them into your library.</p>`}`;
+}
+
 function renderChannelDetail() {
   const main = $("#app");
   const ch = state.activeChannel;
   if (!ch) { state.tab = "home"; return render(); }
   const vids = state.videos.filter((v) => v.channel_id === ch.id);
+  const playlistsHtml = `
+    <div class="page-title">Playlists from ${esc(ch.title)}</div>
+    <div id="channel-playlists" class="playlists">
+      <p class="placeholder">Loading playlists…</p>
+    </div>`;
+  const videosHtml = vids.length
+    ? `<div class="page-title">All videos from ${esc(ch.title)} <span class="count">${vids.length}</span></div>
+       <div class="grid">${vids.map((v) => videoCard(v, { actions: true })).join("")}</div>`
+    : `<div class="page-title">All videos from ${esc(ch.title)}</div>
+       <p class="placeholder">No videos for this channel yet. Click <b>Import uploads</b> to pull in its recent uploads.</p>`;
   main.innerHTML = `
     <a class="back-link" data-tab-nav="channels">← Back to channels</a>
     <div class="chan-header">
@@ -216,10 +289,41 @@ function renderChannelDetail() {
         </div>
       </div>
     </div>
-    ${vids.length
-      ? `<div class="page-title">All videos from ${esc(ch.title)} <span class="count">${vids.length}</span></div>
-         <div class="grid">${vids.map((v) => videoCard(v, { actions: true })).join("")}</div>`
-      : `<p class="placeholder">No videos for this channel yet. Click <b>Import uploads</b> to pull in its recent uploads.</p>`}`;
+    ${playlistsHtml}
+    ${videosHtml}`;
+  loadChannelPlaylists(ch.id);
+}
+
+async function loadChannelPlaylists(chId) {
+  const box = document.querySelector("#channel-playlists");
+  if (!box) return;
+  try {
+    const rows = await API.get(`/api/channels/${encodeURIComponent(chId)}/playlists`);
+    if (!rows || !rows.length) {
+      box.innerHTML = `<p class="placeholder">No public playlists found for this channel.</p>`;
+      return;
+    }
+    box.innerHTML = rows.map((p) => {
+      const added = p.in_library;
+      const btn = added
+        ? `<span class="added-badge" title="This playlist is already in your library">✓ In library</span>`
+        : `<button class="btn small primary" data-act="add-channel-playlist" data-id="${esc(p.id)}" data-title="${esc(p.title)}">Add</button>`;
+      const count = typeof p.item_count === "number" ? `${p.item_count} videos` : "playlist";
+      const thumb = p.thumbnail_url
+        ? `<img src="${esc(p.thumbnail_url)}" alt="" loading="lazy" />`
+        : `<div class="pl-thumb ph">▤</div>`;
+      return `<div class="playlist-row">
+        ${thumb}
+        <div class="pl-meta">
+          <h4>${esc(p.title)}</h4>
+          <div class="sub">${count}</div>
+        </div>
+        <div class="pl-act">${btn}</div>
+      </div>`;
+    }).join("");
+  } catch (err) {
+    box.innerHTML = `<p class="placeholder" style="color:var(--muted)">Could not load playlists: ${esc(err.message)}</p>`;
+  }
 }
 
 function render() {
@@ -228,6 +332,7 @@ function render() {
     case "channels": renderChannels(); break;
     case "playlists": renderPlaylists(); break;
     case "channel": renderChannelDetail(); break;
+    case "playlist": renderPlaylistDetail(); break;
     default: renderHome();
   }
 }
@@ -248,6 +353,12 @@ async function loadAll() {
       if (!fresh) { state.tab = "channels"; state.activeChannel = null; }
       else state.activeChannel = fresh;
     }
+    if (state.tab === "playlist" && state.activePlaylist) {
+      const fresh = playlists.find((p) => p.id === state.activePlaylist.id);
+      if (!fresh) { state.tab = "home"; state.activePlaylist = null; }
+      else state.activePlaylist = fresh;
+    }
+    if (state.tab !== "home") { state.homeQuery = ""; }
     whoami();
     render();
   } catch (e) {
@@ -259,6 +370,8 @@ async function loadAll() {
 function setTab(tab) {
   state.tab = tab;
   state.activeChannel = null;
+  state.activePlaylist = null;
+  document.body.classList.remove("menu-open");
   document.querySelectorAll(".side-item").forEach((x) =>
     x.classList.toggle("active", x.dataset.tab === tab));
   render();
@@ -269,7 +382,20 @@ function bindStaticEvents() {
   document.querySelectorAll(".side-item").forEach((b) =>
     b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-  $("#menu-toggle").addEventListener("click", () => $("#sidebar").classList.toggle("collapsed"));
+  const drawer = $("#sidebar");
+  const setDrawer = (open) => document.body.classList.toggle("menu-open", open);
+  $(".nav-toggle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    setDrawer(!document.body.classList.contains("menu-open"));
+  });
+  // close when clicking content outside the drawer
+  $("#app").addEventListener("click", (e) => {
+    if (document.body.classList.contains("menu-open") && !e.target.closest("#sidebar")) setDrawer(false);
+  });
+  // close with Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("menu-open")) setDrawer(false);
+  });
 
   $("#btn-add").addEventListener("click", () => {
     $("#modal").classList.remove("hidden");
@@ -281,6 +407,13 @@ function bindStaticEvents() {
   $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
 
   $("#btn-clear-all").addEventListener("click", confirmClearAll);
+
+  $("#btn-logout").addEventListener("click", () => {
+    if (!confirm("Sign out of distract-yt?")) return;
+    API.send("POST", "/api/auth/logout")
+      .then(() => { window.location.href = "/login"; })
+      .catch(() => { window.location.href = "/login"; });
+  });
 
   document.querySelectorAll(".add-tab").forEach((b) =>
     b.addEventListener("click", () => {
@@ -315,6 +448,9 @@ function bindStaticEvents() {
   });
 
   $("#app").addEventListener("click", onMainClick);
+  $("#app").addEventListener("input", (e) => {
+    if (e.target && e.target.id === "home-search") filterLibraryPlaylists();
+  });
 }
 
 async function confirmClearAll() {
@@ -364,6 +500,32 @@ function onMainClick(e) {
         await loadAll();
       })
       .catch((err) => { imp.textContent = "Error"; imp.disabled = false; alert(err.message); });
+    return;
+  }
+  const addPl = e.target.closest("[data-act='add-channel-playlist']");
+  if (addPl) {
+    const title = addPl.dataset.title || "this playlist";
+    if (!confirm(`Add "${title}" to your library? You can import its videos afterwards.`)) return;
+    addPl.disabled = true;
+    addPl.textContent = "Adding…";
+    API.add("playlist", addPl.dataset.id)
+      .then(async () => {
+        addPl.textContent = "✓ In library";
+        await loadAll();
+      })
+      .catch((err) => { addPl.textContent = "Error"; addPl.disabled = false; alert(err.message); });
+    return;
+  }
+  const openPl = e.target.closest("[data-open-playlist]");
+  if (openPl) {
+    const id = openPl.dataset.openPlaylist;
+    const pl = state.playlists.find((p) => p.id === id);
+    if (pl) {
+      state.tab = "playlist";
+      state.activePlaylist = pl;
+      document.querySelectorAll(".side-item").forEach((x) => x.classList.remove("active"));
+      render();
+    }
     return;
   }
   if (e.target.id === "btn-clear-videos") { confirmClearAll(); }
@@ -438,17 +600,21 @@ function init() {
   const params = new URLSearchParams(location.search);
   const ch = params.get("ch");
   bindStaticEvents();
-  loadAll().then(() => {
-    if (ch) {
-      const found = state.channels.find((c) => c.id === ch);
-      if (found) {
-        state.tab = "channel";
-        state.activeChannel = found;
-        document.querySelectorAll(".side-item").forEach((x) => x.classList.remove("active"));
-        render();
-      }
-    }
-  });
+  API.get("/api/auth/me")
+    .then(() =>
+      loadAll().then(() => {
+        if (ch) {
+          const found = state.channels.find((c) => c.id === ch);
+          if (found) {
+            state.tab = "channel";
+            state.activeChannel = found;
+            document.querySelectorAll(".side-item").forEach((x) => x.classList.remove("active"));
+            render();
+          }
+        }
+      })
+    )
+    .catch(() => { window.location.href = "/login"; });
 }
 
 init();

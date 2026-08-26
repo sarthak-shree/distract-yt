@@ -240,11 +240,39 @@ class YouTubeClient:
         sn = it.get("snippet", {})
         return {
             "id": it["id"],
+            "channel_id": sn.get("channelId"),
+            "channel_title": sn.get("channelTitle"),
             "title": sn.get("title", ""),
             "description": sn.get("description", ""),
             "thumbnail_url": (sn.get("thumbnails", {}).get("high", {}) or {}).get("url"),
             "item_count": (it.get("contentDetails", {}) or {}).get("itemCount", 0),
         }
+
+    @staticmethod
+    def _to_playlist(item: dict) -> dict:
+        sn = item.get("snippet", {})
+        return {
+            "id": item["id"],
+            "channel_id": sn.get("channelId"),
+            "channel_title": sn.get("channelTitle"),
+            "title": sn.get("title", ""),
+            "description": sn.get("description", ""),
+            "thumbnail_url": (sn.get("thumbnails", {}).get("high", {}) or {}).get("url"),
+            "item_count": (item.get("contentDetails", {}) or {}).get("itemCount", 0),
+        }
+
+    def channel_playlists(self, channel_id: str, limit: int = 50) -> list[dict]:
+        """Return the public playlists owned by a channel (live discovery).
+
+        The two special system playlists (uploads / favourites) are not included,
+        matching YouTube's own listing behaviour.
+        """
+        data = self._call("playlists", {
+            "part": "snippet,contentDetails",
+            "channelId": channel_id,
+            "maxResults": min(limit, 50),
+        })
+        return [self._to_playlist(it) for it in (data.get("items") or [])]
 
     def playlist_videos(self, playlist_id: str, limit: int = 200) -> list[dict]:
         out = []

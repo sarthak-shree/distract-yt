@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · distract-yt</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="auth-body">
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-head">
+        <span class="logo auth-logo">▶</span>
+        <h1 class="auth-title">distract-yt</h1>
+        <p class="auth-sub">Your distraction-free library. Sign in to continue.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-mode="login">Log in</button>
+        <button type="button" class="auth-tab" data-mode="register">Sign up</button>
+      </div>
+
+      <form id="auth-form" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="auth-username">Username</label>
+          <input id="auth-username" type="text" autocomplete="username" placeholder="your_handle" spellcheck="false" />
+        </div>
+
+        <div class="auth-field">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+
+        <div class="auth-field register-only hidden" id="confirm-field">
+          <label for="auth-confirm">Confirm password</label>
+          <input id="auth-confirm" type="password" autocomplete="new-password" placeholder="••••••••" />
+        </div>
+
+        <p id="auth-msg" class="auth-msg" hidden></p>
+
+        <button type="submit" class="blob-btn auth-submit" id="auth-submit">
+          <span class="auth-submit-label" id="auth-submit-label">Log in</span>
+          <span class="blob-btn__inner">
+            <span class="blob-btn__blobs">
+              <span class="blob-btn__blob"></span>
+              <span class="blob-btn__blob"></span>
+              <span class="blob-btn__blob"></span>
+              <span class="blob-btn__blob"></span>
+            </span>
+          </span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SVG gooey filter used by the blob button -->
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="position:absolute;height:0;width:0" aria-hidden="true">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+        <feBlend in="SourceGraphic" in2="goo" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="/static/particles.js"></script>
+  <script src="/static/auth.js"></script>
+</body>
+</html>

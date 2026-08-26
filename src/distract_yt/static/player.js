@@ -8,6 +8,11 @@
 
   var VIDEO_ID = (location.pathname.slice("/watch/".length).split("/")[0] || "").trim();
 
+  // Gate the watch page behind authentication.
+  fetch("/api/auth/me").then(function (r) {
+    if (!r.ok) window.location.href = "/login";
+  }).catch(function () { window.location.href = "/login"; });
+
   var player = null;
   var queue = [];
   var isPlaying = false;

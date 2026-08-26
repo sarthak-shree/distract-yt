@@ -41,5 +41,8 @@ DEBUG: bool = (get_env("DEBUG", "1") or "1") == "1"
 # How long to keep YouTube API responses in the cache before refetching.
 CACHE_TTL_SECONDS: int = int(get_env("CACHE_TTL_SECONDS", "86400") or "86400")
 
+# Sign for the session cookies. In production set a long random value in `.env`.
+SECRET_KEY: str = get_env("SECRET_KEY", "distract-yt-dev-secret-change-me") or "distract-yt-dev-secret-change-me"
+
 # How many videos to pull when importing a channel (keeps quotas low).
 CHANNEL_IMPORT_LIMIT: int = int(get_env("CHANNEL_IMPORT_LIMIT", "15") or "15")

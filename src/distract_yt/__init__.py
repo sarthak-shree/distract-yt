@@ -11,12 +11,15 @@ import sys
 from flask import Flask, send_from_directory
 
 from . import api
-from .config import STATIC_DIR
+from .config import SECRET_KEY, STATIC_DIR
 
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder=None, template_folder=str(STATIC_DIR))
     app.config["JSON_SORT_KEYS"] = False
+    app.secret_key = SECRET_KEY
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.url_map.strict_slashes = False
 
     app.register_blueprint(api.bp)
@@ -24,6 +27,10 @@ def create_app() -> Flask:
     @app.get("/")
     def index():
         return send_from_directory(STATIC_DIR, "index.html")
+
+    @app.get("/login")
+    def login_page():
+        return send_from_directory(STATIC_DIR, "auth.html")
 
     @app.get("/watch/<video_id>")
     def watch(video_id: str):

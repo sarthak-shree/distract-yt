@@ -79,13 +79,32 @@ uv run distract-yt
 # open http://127.0.0.1:8000
 ```
 
+## Authentication
+
+The app is gated behind a login. Register an account, sign in, and you can use
+your library; unauthenticated library API calls return `401`.
+
+- The first screen is **/login** — an animated log-in / sign-up form (blob
+  submit button). Sign up creates a user (password stored as a salted hash via
+  Werkzeug), login starts a signed session cookie.
+- Sign out via the **Sign out** button in the sidebar.
+- Sessions use `SECRET_KEY` (set one in `.env` for production; a dev default is
+  used otherwise).
+
 ## REST API
 
 ```
-Library
+Auth
+  POST   /api/auth/register            register a user {username, password}
+  POST   /api/auth/login               log in {username, password}
+  POST   /api/auth/logout              log out (clears the session)
+  GET    /api/auth/me                  current user (401 if not logged in)
+
+Library (all require a logged-in session)
   GET    /api/channels                 list allowed channels
   POST   /api/channels                 add channel by URL / @handle / id
   DELETE /api/channels/<id>            remove channel (and its videos)
+  GET    /api/channels/<id>/playlists  list a channel's playlists live (for its menu)
   GET    /api/playlists                list allowed playlists
   POST   /api/playlists                add playlist by URL / id
   DELETE /api/playlists/<id>           remove playlist
@@ -100,7 +119,7 @@ Discovery (only used by the "Add content" flow)
   POST   /api/import/channel/<id>      import all uploads of a channel
   POST   /api/import/playlist/<id>     import all items of a playlist
 
-Health
+Health (public, no login needed)
   GET    /api/status
 ```
 
@@ -110,8 +129,11 @@ Health
   one section **per playlist** and **per channel** you've added (created
   automatically when you add them), plus a "Latest videos" grid.
 - Channels, Videos and Collections pages, plus a collapsible sidebar.
+- Channels, Videos and Collections pages, plus a collapsible sidebar.
 - Clicking a **channel** opens a channel detail page restricted to **only that
-  channel's videos** — you cannot browse channels you haven't added.
+  channel's videos** — you cannot browse channels you haven't added. The channel
+  menu also lists that channel's **playlists** (fetched live from YouTube) so you
+  can add the ones you want to your library.
 - **Clear all videos** button in the sidebar and on the Videos page removes every
   video but keeps your channels and collections (re-import anytime).
 
